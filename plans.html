@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1A1208">
+<title>BandulhoCheio — Planos</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--cream:#F5F0E8;--dark:#1A1208;--terra:#C4622D;--gold:#D4A843;--olive:#5C6B3A;--sand:#E8D9C0;--muted:#7A6A52;--card:#FFFDF8}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--dark);font-family:"DM Sans",sans-serif}
+.screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:env(safe-area-inset-bottom)}
+.sheet{background:var(--card);border-radius:24px 24px 0 0;padding:32px 24px 40px;width:100%;max-width:520px}
+.logo{font-family:"Playfair Display",serif;font-size:1.4rem;text-align:center;margin-bottom:4px;color:var(--dark)}
+.logo em{color:var(--terra);font-style:normal}
+.sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:24px}
+.feats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px}
+.feat{background:var(--cream);border-radius:12px;padding:10px 12px;font-size:.8rem;color:var(--dark);display:flex;align-items:center;gap:6px}
+.feat::before{content:"✓";color:var(--olive);font-weight:700}
+.plan-btn{width:100%;border:none;border-radius:14px;padding:16px 20px;font-family:"DM Sans",sans-serif;font-weight:600;cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:.2s;position:relative}
+.plan-btn:active{opacity:.85}
+.plan-mensal{background:var(--terra);color:#fff;font-size:.95rem}
+.plan-semestral{background:var(--olive);color:#fff;font-size:.95rem}
+.plan-anual{background:var(--dark);color:#fff;font-size:.95rem}
+.plan-badge{background:var(--gold);color:var(--dark);font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:100px}
+.plan-price{font-size:.82rem;opacity:.85;font-weight:400}
+.logout{display:block;text-align:center;margin-top:16px;font-size:.82rem;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="sheet">
+    <div class="logo">Bandulho<em>Cheio</em></div>
+    <div class="sub">Escolhe o teu plano para aceder a 1.551 restaurantes em Portugal</div>
+
+    <div class="feats">
+      <div class="feat">1.551 restaurantes</div>
+      <div class="feat">Mapa interativo</div>
+      <div class="feat">Continente e ilhas</div>
+      <div class="feat">Filtros rápidos</div>
+      <div class="feat">Link Google Maps</div>
+      <div class="feat">Sempre atualizado</div>
+    </div>
+
+    <button class="plan-btn plan-mensal" onclick="choosePlan('mensal','https://buy.stripe.com/eVq9AT2iVcHD86F2Bib3q05')">
+      <div><div>Mensal</div><div class="plan-price">1,49€/mês · cancela quando quiseres</div></div>
+    </button>
+    <button class="plan-btn plan-semestral" onclick="choosePlan('semestral','https://buy.stripe.com/dRm4gze1DePLgDb1xeb3q04')">
+      <div><div>Semestral</div><div class="plan-price">5,99€ · equivale a 1,00€/mês</div></div>
+      <span class="plan-badge">poupa 33%</span>
+    </button>
+    <button class="plan-btn plan-anual" onclick="choosePlan('anual','https://buy.stripe.com/00w8wPf5HbDz9aJb7Ob3q03')">
+      <div><div>Anual</div><div class="plan-price">10,99€ · equivale a 0,92€/mês</div></div>
+      <span class="plan-badge">poupa 38%</span>
+    </button>
+
+    <a class="logout" onclick="logout()">Sair da conta</a>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://lnoadcecdasvbhcbkkug.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxub2FkY2VjZGFzdmJoY2Jra3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjk5NjksImV4cCI6MjA5Njc0NTk2OX0.SChpCCjSZJTY0-2ZiiVhFop8QN20ZzOcw7Km6rxBHj4';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+// Se não está logado, volta ao login
+sb.auth.getSession().then(({data:{session}})=>{
+  if(!session) window.location.href='index.html';
+});
+
+async function choosePlan(plan, stripeUrl){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session) return;
+  // Guarda plano pendente e redireciona para Stripe
+  localStorage.setItem('pending_plan', plan);
+  localStorage.setItem('user_id', session.user.id);
+  window.location.href = stripeUrl + '?client_reference_id=' + session.user.id;
+}
+
+async function logout(){
+  await sb.auth.signOut();
+  window.location.href='index.html';
+}
+</script>
+</body>
+</html>

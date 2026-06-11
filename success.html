@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1A1208">
+<title>BandulhoCheio — Pagamento confirmado</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--cream:#F5F0E8;--dark:#1A1208;--terra:#C4622D;--gold:#D4A843;--olive:#5C6B3A;--sand:#E8D9C0;--muted:#7A6A52;--card:#FFFDF8}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%;background:var(--dark);font-family:"DM Sans",sans-serif}
+.screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:env(safe-area-inset-bottom)}
+.sheet{background:var(--card);border-radius:24px 24px 0 0;padding:40px 24px 48px;width:100%;max-width:520px;text-align:center}
+.icon{font-size:3.5rem;margin-bottom:16px}
+h2{font-family:"Playfair Display",serif;font-size:1.6rem;margin-bottom:10px;color:var(--dark)}
+p{color:var(--muted);font-size:.9rem;line-height:1.6;margin-bottom:28px}
+.btn{width:100%;background:var(--terra);color:#fff;border:none;border-radius:14px;padding:16px;font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:600;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="sheet">
+    <div class="icon">🎉</div>
+    <h2>Pagamento confirmado!</h2>
+    <p>Bem-vindo ao BandulhoCheio!<br>O teu acesso está agora ativo.<br>Bom apetite! 🍽️</p>
+    <button class="btn" onclick="goToApp()">Explorar restaurantes</button>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://lnoadcecdasvbhcbkkug.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxub2FkY2VjZGFzdmJoY2Jra3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjk5NjksImV4cCI6MjA5Njc0NTk2OX0.SChpCCjSZJTY0-2ZiiVhFop8QN20ZzOcw7Km6rxBHj4';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+async function activatePlan(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){ window.location.href='index.html'; return; }
+
+  const plan = localStorage.getItem('pending_plan') || 'mensal';
+  const now = new Date();
+  let expires = null;
+
+  if(plan==='semestral'){
+    expires = new Date(now.setMonth(now.getMonth()+6)).toISOString();
+  } else if(plan==='anual'){
+    expires = new Date(now.setFullYear(now.getFullYear()+1)).toISOString();
+  }
+  // mensal é gerido pelo Stripe automaticamente
+
+  await sb.from('profiles').upsert({
+    id: session.user.id,
+    email: session.user.email,
+    plan: plan,
+    plan_expires_at: expires
+  });
+
+  localStorage.removeItem('pending_plan');
+  localStorage.removeItem('user_id');
+}
+
+activatePlan();
+
+function goToApp(){ window.location.href='app.html'; }
+</script>
+</body>
+</html>
