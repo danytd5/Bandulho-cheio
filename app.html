@@ -222,9 +222,10 @@ const _sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 _sb.auth.getSession().then(async ({data:{session}})=>{
   if(!session){ window.location.href='index.html'; return; }
   const {data}=await _sb.from('profiles').select('plan,plan_expires_at').eq('id',session.user.id).single();
-  const hasAccess = data && data.plan && (
-    data.plan==='mensal' ||
-    (data.plan_expires_at && new Date(data.plan_expires_at) > new Date())
+  const hasAccess = data && data.status === 'active' && (
+    data.plan === 'mensal' ||
+    !data.plan_expires_at ||
+    new Date(data.plan_expires_at) > new Date()
   );
   if(!hasAccess){ window.location.href='plans.html'; return; }
   // Mostra botão de logout no header

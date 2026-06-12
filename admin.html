@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1A1208">
+<title>BandulhoCheio — Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--cream:#F5F0E8;--dark:#1A1208;--terra:#C4622D;--gold:#D4A843;--olive:#5C6B3A;--sand:#E8D9C0;--muted:#7A6A52;--card:#FFFDF8}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:"DM Sans",sans-serif;background:var(--cream);min-height:100vh}
+header{background:var(--dark);padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:"Playfair Display",serif;font-size:1.1rem;color:var(--gold)}
+.logo em{color:#fff;font-style:normal}
+.badge{background:var(--terra);color:#fff;font-size:.72rem;padding:4px 10px;border-radius:100px;font-weight:600}
+.container{padding:20px;max-width:600px;margin:0 auto}
+h2{font-family:"Playfair Display",serif;font-size:1.2rem;margin-bottom:16px;color:var(--dark)}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:24px}
+.stat{background:var(--card);border-radius:12px;padding:14px;text-align:center;border:1px solid var(--sand)}
+.stat-num{font-size:1.6rem;font-weight:700;color:var(--terra)}
+.stat-label{font-size:.72rem;color:var(--muted);margin-top:2px}
+.filters{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:7px 14px;border-radius:100px;border:1.5px solid var(--sand);background:#fff;font-family:"DM Sans",sans-serif;font-size:.8rem;cursor:pointer;transition:.2s;font-weight:500}
+.filter-btn.active{background:var(--terra);border-color:var(--terra);color:#fff}
+.user-card{background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1px solid var(--sand);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.user-email{font-size:.88rem;font-weight:500;color:var(--dark);margin-bottom:3px;word-break:break-all}
+.user-meta{font-size:.75rem;color:var(--muted)}
+.status-badge{font-size:.7rem;font-weight:700;padding:3px 10px;border-radius:100px;white-space:nowrap;flex-shrink:0}
+.status-active{background:#D1FAE5;color:#065F46}
+.status-pending{background:#FEF3C7;color:#92400E}
+.status-inactive{background:var(--sand);color:var(--muted)}
+.actions{display:flex;gap:6px;flex-shrink:0}
+.btn-activate{background:var(--olive);color:#fff;border:none;border-radius:8px;padding:7px 12px;font-family:"DM Sans",sans-serif;font-size:.78rem;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn-deactivate{background:var(--sand);color:var(--muted);border:none;border-radius:8px;padding:7px 12px;font-family:"DM Sans",sans-serif;font-size:.78rem;cursor:pointer;white-space:nowrap}
+.btn-activate:active{background:#4a5730}
+.empty{text-align:center;padding:40px;color:var(--muted);font-size:.9rem}
+.login-box{max-width:360px;margin:80px auto;background:var(--card);border-radius:16px;padding:28px;border:1px solid var(--sand)}
+.login-box h3{font-family:"Playfair Display",serif;margin-bottom:16px;text-align:center}
+.field{margin-bottom:12px}
+.field input{width:100%;border:1.5px solid var(--sand);border-radius:10px;padding:11px 12px;font-family:"DM Sans",sans-serif;font-size:.9rem;outline:none}
+.field input:focus{border-color:var(--terra)}
+.btn-login{width:100%;background:var(--terra);color:#fff;border:none;border-radius:10px;padding:13px;font-family:"DM Sans",sans-serif;font-size:.9rem;font-weight:600;cursor:pointer}
+.refresh-btn{background:var(--cream);border:1.5px solid var(--sand);border-radius:8px;padding:6px 12px;font-family:"DM Sans",sans-serif;font-size:.8rem;cursor:pointer;color:var(--dark)}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-box">
+    <h3>🔐 Admin</h3>
+    <div class="field"><input type="email" id="admin-email" placeholder="Email de admin" autocomplete="email"></div>
+    <div class="field"><input type="password" id="admin-pass" placeholder="Password" autocomplete="current-password"></div>
+    <button class="btn-login" onclick="adminLogin()">Entrar</button>
+    <div id="login-err" style="color:#991B1B;font-size:.8rem;margin-top:10px;text-align:center"></div>
+  </div>
+</div>
+
+<div id="admin-screen" style="display:none">
+  <header>
+    <div class="logo">Bandulho<em>Cheio</em> · Admin</div>
+    <button class="refresh-btn" onclick="loadUsers()">↻ Atualizar</button>
+  </header>
+  <div class="container">
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="cnt-total">0</div><div class="stat-label">Total</div></div>
+      <div class="stat"><div class="stat-num" id="cnt-pending" style="color:var(--gold)">0</div><div class="stat-label">Pendentes</div></div>
+      <div class="stat"><div class="stat-num" id="cnt-active" style="color:var(--olive)">0</div><div class="stat-label">Ativos</div></div>
+    </div>
+
+    <div class="filters">
+      <button class="filter-btn active" onclick="setFilter('all',this)">Todos</button>
+      <button class="filter-btn" onclick="setFilter('pending',this)">⏳ Pendentes</button>
+      <button class="filter-btn" onclick="setFilter('active',this)">✅ Ativos</button>
+      <button class="filter-btn" onclick="setFilter('inactive',this)">Sem plano</button>
+    </div>
+
+    <div id="user-list"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://lnoadcecdasvbhcbkkug.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxub2FkY2VjZGFzdmJoY2Jra3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjk5NjksImV4cCI6MjA5Njc0NTk2OX0.SChpCCjSZJTY0-2ZiiVhFop8QN20ZzOcw7Km6rxBHj4';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+// DEFINE O TEU EMAIL DE ADMIN AQUI
+const ADMIN_EMAIL = 'daniel.rg.santos@gmail.com';
+
+let allUsers=[], currentFilter='all';
+
+sb.auth.getSession().then(({data:{session}})=>{
+  if(session && session.user.email===ADMIN_EMAIL){
+    showAdmin();
+  }
+});
+
+async function adminLogin(){
+  const email=document.getElementById('admin-email').value.trim();
+  const pass=document.getElementById('admin-pass').value;
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error||data.user.email!==ADMIN_EMAIL){
+    document.getElementById('login-err').textContent='Acesso negado.';
+    return;
+  }
+  showAdmin();
+}
+
+function showAdmin(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('admin-screen').style.display='block';
+  loadUsers();
+}
+
+async function loadUsers(){
+  const {data,error}=await sb.from('profiles').select('*').order('created_at',{ascending:false});
+  if(error){console.error(error);return;}
+  allUsers=data||[];
+  updateStats();
+  renderUsers();
+}
+
+function updateStats(){
+  document.getElementById('cnt-total').textContent=allUsers.length;
+  document.getElementById('cnt-pending').textContent=allUsers.filter(u=>u.status==='pending').length;
+  document.getElementById('cnt-active').textContent=allUsers.filter(u=>u.status==='active').length;
+}
+
+function setFilter(filter, el){
+  currentFilter=filter;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderUsers();
+}
+
+function renderUsers(){
+  const list=document.getElementById('user-list');
+  let users=allUsers;
+  if(currentFilter==='pending') users=allUsers.filter(u=>u.status==='pending');
+  else if(currentFilter==='active') users=allUsers.filter(u=>u.status==='active');
+  else if(currentFilter==='inactive') users=allUsers.filter(u=>!u.status||u.status==='inactive');
+
+  if(!users.length){list.innerHTML='<div class="empty">Nenhum utilizador encontrado.</div>';return;}
+
+  list.innerHTML=users.map(u=>`
+    <div class="user-card" id="card-${u.id}">
+      <div style="flex:1;min-width:0">
+        <div class="user-email">${u.email||'—'}</div>
+        <div class="user-meta">${u.plan?'Plano: '+u.plan+' · ':''} ${u.created_at?new Date(u.created_at).toLocaleDateString('pt'):''}</div>
+      </div>
+      <div class="actions">
+        <span class="status-badge ${u.status==='active'?'status-active':u.status==='pending'?'status-pending':'status-inactive'}">
+          ${u.status==='active'?'✅ Ativo':u.status==='pending'?'⏳ Pendente':'Sem plano'}
+        </span>
+        ${u.status!=='active'?`<button class="btn-activate" onclick="activateUser('${u.id}')">Ativar</button>`:''}
+        ${u.status==='active'?`<button class="btn-deactivate" onclick="deactivateUser('${u.id}')">Desativar</button>`:''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function activateUser(id){
+  const u=allUsers.find(x=>x.id===id);
+  if(!u) return;
+  // Calculate expiry based on plan
+  const now=new Date();
+  let expires=null;
+  if(u.plan==='semestral') expires=new Date(new Date().setMonth(now.getMonth()+6)).toISOString();
+  else if(u.plan==='anual') expires=new Date(new Date().setFullYear(now.getFullYear()+1)).toISOString();
+
+  await sb.from('profiles').update({status:'active', plan_expires_at:expires}).eq('id',id);
+  allUsers=allUsers.map(x=>x.id===id?{...x,status:'active',plan_expires_at:expires}:x);
+  updateStats();
+  renderUsers();
+}
+
+async function deactivateUser(id){
+  await sb.from('profiles').update({status:'inactive'}).eq('id',id);
+  allUsers=allUsers.map(x=>x.id===id?{...x,status:'inactive'}:x);
+  updateStats();
+  renderUsers();
+}
+</script>
+</body>
+</html>

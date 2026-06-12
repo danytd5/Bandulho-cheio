@@ -121,7 +121,7 @@ async function loginGoogle(){
 async function checkAccessAndRedirect(user){
   // Check if user has active plan
   const {data}=await sb.from('profiles').select('plan,plan_expires_at').eq('id',user.id).single();
-  if(data && data.plan && (data.plan==='mensal' || (data.plan_expires_at && new Date(data.plan_expires_at) > new Date()))){
+  if(data && data.status === 'active'){
     window.location.href='app.html';
   } else {
     window.location.href='plans.html';
