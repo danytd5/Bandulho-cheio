@@ -123,15 +123,20 @@ async function loginGoogle(){
   await sb.auth.signInWithOAuth({provider:'google', options:{redirectTo: window.location.origin+'/app.html'}});
 }
 
+
+
 async function checkAccessAndRedirect(user){
-  // Check if user has active plan
-  const {data}=await sb.from('profiles').select('plan,plan_expires_at').eq('id',user.id).single();
-  // Admin bypass
-  if(session.user.email === 'daniel.rg.santos@gmail.com'){
+  if(user.email === 'daniel.rg.santos@gmail.com'){
     window.location.href='admin.html';
     return;
   }
-  if(data && data.status === 'active'){
+  const {data}=await sb.from('profiles').select('status').eq('id',user.id).maybeSingle();
+  if(!data){
+    await sb.from('profiles').insert({id:user.id, email:user.email, status:'inactive'});
+    window.location.href='plans.html';
+    return;
+  }
+  if(data.status==='active'){
     window.location.href='app.html';
   } else {
     window.location.href='plans.html';
