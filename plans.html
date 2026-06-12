@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1A1208">
+<title>BandulhoCheio — Ativar acesso</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--cream:#F5F0E8;--dark:#1A1208;--terra:#C4622D;--gold:#D4A843;--olive:#5C6B3A;--sand:#E8D9C0;--muted:#7A6A52;--card:#FFFDF8}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--dark);font-family:"DM Sans",sans-serif}
+.screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:env(safe-area-inset-bottom)}
+.sheet{background:var(--card);border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%;max-width:520px}
+.logo-wrap{text-align:center;margin-bottom:12px}
+.logo-wrap img{width:100%;max-width:200px;display:block;margin:0 auto}
+.logo{font-family:"Playfair Display",serif;font-size:1.3rem;text-align:center;margin-bottom:4px;color:var(--dark)}
+.logo em{color:var(--terra);font-style:normal}
+.sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:20px}
+.plans{display:flex;flex-direction:column;gap:8px;margin-bottom:20px}
+.plan{border:2px solid var(--sand);border-radius:14px;padding:14px 16px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:space-between;background:#fff}
+.plan:active{border-color:var(--terra)}
+.plan.selected{border-color:var(--terra);background:#FFF3EE}
+.plan-name{font-weight:600;font-size:.95rem;color:var(--dark)}
+.plan-desc{font-size:.75rem;color:var(--muted);margin-top:2px}
+.plan-price{font-weight:700;color:var(--terra);font-size:1rem}
+.plan-badge{background:var(--gold);color:var(--dark);font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:100px;margin-top:4px;display:inline-block}
+.divider{height:1px;background:var(--sand);margin:20px 0}
+.instructions{background:var(--cream);border-radius:14px;padding:16px;margin-bottom:20px;display:none}
+.instructions.show{display:block}
+.inst-title{font-weight:600;font-size:.9rem;color:var(--dark);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.step{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;font-size:.85rem;color:var(--dark);line-height:1.5}
+.step-num{background:var(--terra);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;margin-top:1px}
+.highlight{background:#fff;border:1.5px solid var(--sand);border-radius:10px;padding:10px 14px;margin:10px 0;font-size:.9rem;display:flex;align-items:center;justify-content:space-between}
+.highlight strong{color:var(--terra);font-size:1rem}
+.copy-btn{background:var(--terra);color:#fff;border:none;border-radius:8px;padding:5px 12px;font-size:.75rem;cursor:pointer;font-family:"DM Sans",sans-serif}
+.email-box{background:#fff;border:1.5px solid var(--terra);border-radius:10px;padding:10px 14px;margin:8px 0;font-size:.85rem;color:var(--dark);word-break:break-all;font-weight:500}
+.btn-main{width:100%;background:var(--terra);color:#fff;border:none;border-radius:14px;padding:16px;font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:600;cursor:pointer;margin-bottom:10px;display:none}
+.btn-main.show{display:block}
+.btn-main:active{background:#a84f22}
+.note{font-size:.78rem;color:var(--muted);text-align:center;line-height:1.5;margin-bottom:12px;display:none}
+.note.show{display:block}
+.logout{display:block;text-align:center;font-size:.82rem;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.pending-banner{background:#FEF3C7;border:1.5px solid #F59E0B;border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:.83rem;color:#92400E;line-height:1.5;display:none}
+.pending-banner.show{display:block}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="sheet">
+    <div class="logo-wrap"><img src="logo.png" alt="BandulhoCheio"></div>
+    <div class="logo">Bandulho<em>Cheio</em></div>
+    <div class="sub">Escolhe o teu plano e ativa o acesso</div>
+
+    <div class="pending-banner" id="pendingBanner">
+      ⏳ O teu pagamento está a aguardar confirmação. Assim que confirmarmos o MBWay o teu acesso será ativado!
+    </div>
+
+    <div class="plans">
+      <div class="plan" onclick="selectPlan('mensal', '1,49€', this)">
+        <div>
+          <div class="plan-name">Mensal</div>
+          <div class="plan-desc">Acesso completo · renova automaticamente</div>
+        </div>
+        <div class="plan-price">1,49€/mês</div>
+      </div>
+      <div class="plan" onclick="selectPlan('semestral', '5,99€', this)">
+        <div>
+          <div class="plan-name">Semestral</div>
+          <div class="plan-desc">Equivale a 1,00€/mês</div>
+          <span class="plan-badge">poupa 33%</span>
+        </div>
+        <div class="plan-price">5,99€</div>
+      </div>
+      <div class="plan" onclick="selectPlan('anual', '10,99€', this)">
+        <div>
+          <div class="plan-name">Anual</div>
+          <div class="plan-desc">Equivale a 0,92€/mês</div>
+          <span class="plan-badge">poupa 38%</span>
+        </div>
+        <div class="plan-price">10,99€</div>
+      </div>
+    </div>
+
+    <div class="instructions" id="instructions">
+      <div class="inst-title">📱 Como pagar por MBWay</div>
+      <div class="step"><div class="step-num">1</div><div>Abre o teu banco ou app MBWay e envia o valor para:</div></div>
+      <div class="highlight">
+        <strong>+351 964 963 140</strong>
+        <button class="copy-btn" onclick="copyPhone()">Copiar</button>
+      </div>
+      <div class="step"><div class="step-num">2</div><div>No campo <strong>descrição/referência</strong> coloca o teu email:</div></div>
+      <div class="email-box" id="userEmail">—</div>
+      <div class="step"><div class="step-num">3</div><div>Envia <strong id="planAmount">—</strong> e aguarda a confirmação (normalmente em menos de 24 horas).</div></div>
+    </div>
+
+    <button class="btn-main" id="btnConfirm">Já enviei o MBWay! ✓</button>
+    <div class="note" id="noteConfirm">Receberás acesso assim que confirmarmos o pagamento. Podes fechar esta página.</div>
+
+    <a class="logout" onclick="logout()">Sair da conta</a>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://lnoadcecdasvbhcbkkug.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxub2FkY2VjZGFzdmJoY2Jra3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjk5NjksImV4cCI6MjA5Njc0NTk2OX0.SChpCCjSZJTY0-2ZiiVhFop8QN20ZzOcw7Km6rxBHj4';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+let currentUser=null, selectedPlan=null;
+
+sb.auth.getSession().then(async ({data:{session}})=>{
+  if(!session){window.location.href='index.html';return;}
+  currentUser=session.user;
+  document.getElementById('userEmail').textContent=session.user.email;
+  // Check if already pending
+  const {data}=await sb.from('profiles').select('plan,status').eq('id',session.user.id).single();
+  if(data && data.status==='pending'){
+    document.getElementById('pendingBanner').classList.add('show');
+  }
+  if(data && data.status==='active'){
+    window.location.href='app.html';
+  }
+});
+
+function selectPlan(plan, amount, el){
+  selectedPlan=plan;
+  document.querySelectorAll('.plan').forEach(p=>p.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('planAmount').textContent=amount;
+  document.getElementById('instructions').classList.add('show');
+  document.getElementById('btnConfirm').classList.add('show');
+}
+
+async function confirmPayment(){
+  if(!currentUser||!selectedPlan) return;
+  const btn=document.getElementById('btnConfirm');
+  btn.disabled=true; btn.textContent='A registar...';
+  await sb.from('profiles').upsert({
+    id:currentUser.id,
+    email:currentUser.email,
+    plan:selectedPlan,
+    status:'pending'
+  });
+  btn.style.display='none';
+  document.getElementById('noteConfirm').classList.add('show');
+  document.getElementById('pendingBanner').classList.add('show');
+}
+
+function copyPhone(){
+  navigator.clipboard.writeText('+351 964 963 140').then(()=>{
+    event.target.textContent='Copiado!';
+    setTimeout(()=>event.target.textContent='Copiar',2000);
+  });
+}
+
+document.getElementById('btnConfirm').onclick=confirmPayment;
+
+async function logout(){
+  await sb.auth.signOut();
+  window.location.href='index.html';
+}
+</script>
+</body>
+</html>
