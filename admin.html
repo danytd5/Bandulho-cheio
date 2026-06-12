@@ -93,6 +93,9 @@ let allUsers=[], currentFilter='all';
 sb.auth.getSession().then(({data:{session}})=>{
   if(session && session.user.email===ADMIN_EMAIL){
     showAdmin();
+  } else if(session) {
+    // Logged in but not admin - sign out and show login
+    sb.auth.signOut();
   }
 });
 

@@ -222,6 +222,11 @@ const _sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 _sb.auth.getSession().then(async ({data:{session}})=>{
   if(!session){ window.location.href='index.html'; return; }
   const {data}=await _sb.from('profiles').select('plan,plan_expires_at').eq('id',session.user.id).single();
+  // Admin bypass
+  if(session.user.email === 'daniel.rg.santos@gmail.com'){
+    window.location.href='admin.html';
+    return;
+  }
   const hasAccess = data && data.status === 'active' && (
     data.plan === 'mensal' ||
     !data.plan_expires_at ||
