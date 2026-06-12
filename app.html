@@ -218,22 +218,12 @@ const SUPABASE_URL='https://lnoadcecdasvbhcbkkug.supabase.co';
 const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxub2FkY2VjZGFzdmJoY2Jra3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExNjk5NjksImV4cCI6MjA5Njc0NTk2OX0.SChpCCjSZJTY0-2ZiiVhFop8QN20ZzOcw7Km6rxBHj4';
 const _sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-// Auth guard — redireciona se não está logado ou não tem plano
+// Auth guard — só verifica acesso, sem redirect para admin
 _sb.auth.getSession().then(async ({data:{session}})=>{
   if(!session){ window.location.href='index.html'; return; }
-  const {data}=await _sb.from('profiles').select('plan,plan_expires_at').eq('id',session.user.id).single();
-  // Admin bypass
-  if(session.user.email === 'daniel.rg.santos@gmail.com'){
-    window.location.href='admin.html';
-    return;
-  }
-  const hasAccess = data && data.status === 'active' && (
-    data.plan === 'mensal' ||
-    !data.plan_expires_at ||
-    new Date(data.plan_expires_at) > new Date()
-  );
+  const {data}=await _sb.from('profiles').select('status,plan,plan_expires_at').eq('id',session.user.id).maybeSingle();
+  const hasAccess = data && data.status === 'active';
   if(!hasAccess){ window.location.href='plans.html'; return; }
-  // Mostra botão de logout no header
   document.getElementById('hbtn-logout').style.display='block';
   document.getElementById('hbtn-login').style.display='none';
 });
