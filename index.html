@@ -96,8 +96,13 @@ async function login(){
   const btn=event.target; btn.disabled=true; btn.textContent='A entrar...';
   const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
   btn.disabled=false; btn.textContent='Entrar';
-  if(error){showMsg('Email ou password incorretos','error');return;}
-  checkAccessAndRedirect(data.user);
+  if(error){showMsg('Erro: '+error.message,'error');return;}
+  showMsg('Login OK, a verificar perfil...','success');
+  try {
+    await checkAccessAndRedirect(data.user);
+  } catch(e) {
+    showMsg('Erro no redirect: '+e.message,'error');
+  }
 }
 
 async function register(){
