@@ -185,6 +185,11 @@ async function deactivateUser(id){
   updateStats();
   renderUsers();
 }
+
+async function adminLogout(){
+  await sb.auth.signOut();
+  window.location.href='index.html';
+}
 </script>
 </body>
 </html>
